@@ -16,18 +16,20 @@ const DAMP = 3.6; // camera damping per second
    phi:   pitch above the horizon (rad)
    dist:  distance from target
    look:  target offset from diorama centre, fraction of its height
+   shift: sideways aim offset (world units) — pushes the subject off-centre
+          so it can share the frame with copy
 */
 const POSES = [
   // hero — front three-quarter, the whole island floating
   { theta: Math.PI * -0.06, phi: 0.14, dist: 28.5, look: 0.62, fov: 32 },
   // statement — lift up and around the right corner
   { theta: Math.PI * 0.16, phi: 0.38, dist: 26, look: 0.46, fov: 33 },
-  // story — slide round to the kitchen side
-  { theta: Math.PI * 0.34, phi: 0.2, dist: 24, look: 0.44, fov: 34 },
+  // story — slide round to the kitchen side, subject pushed right of the copy
+  { theta: Math.PI * 0.34, phi: 0.2, dist: 24, look: 0.44, fov: 34, shift: -2.4 },
   // menu — low, close, straight down the open front
   { theta: Math.PI * 0.1, phi: 0.1, dist: 20, look: 0.4, fov: 36 },
   // crew — swing round to the host at the counter
-  { theta: Math.PI * 1.42, phi: 0.17, dist: 8.6, look: 0.5, fov: 32, target: 'host' },
+  { theta: Math.PI * 1.42, phi: 0.17, dist: 8.6, look: 0.5, fov: 32, target: 'host', shift: 1.6 },
   // visit — pull back high and wide, the island as an object
   { theta: Math.PI * -0.3, phi: 0.4, dist: 33, look: 0.46, fov: 31 },
 ];
@@ -359,6 +361,7 @@ export class Experience {
       dist: THREE.MathUtils.lerp(a.dist, b.dist, ease),
       look: THREE.MathUtils.lerp(a.look, b.look, ease),
       fov: THREE.MathUtils.lerp(a.fov, b.fov, ease),
+      shift: THREE.MathUtils.lerp(a.shift || 0, b.shift || 0, ease),
       hostMix: THREE.MathUtils.lerp(hostMixA, hostMixB, ease),
     };
   }
@@ -381,7 +384,7 @@ export class Experience {
     this.mouse.lerp(this.mouseTarget, Math.min(1, dt * 2.6));
 
     const k = 1 - Math.exp(-DAMP * dt);
-    const { theta, phi, dist, look, fov, hostMix } = this._poseTargets();
+    const { theta, phi, dist, look, fov, shift, hostMix } = this._poseTargets();
 
     // narrow screens: widen the lens and step back so the island still fits
     const aspect = this.camera.aspect;
@@ -412,12 +415,16 @@ export class Experience {
     const py = -this.mouse.y * (0.35 + d * 0.03);
     const bob = Math.sin(time * 0.55) * 0.14;
 
+    // sideways aim offset, along the orbit's right axis
+    const aimX = cx + Math.cos(th) * shift;
+    const aimZ = cz - Math.sin(th) * shift;
+
     this._camPos.set(
-      cx + Math.sin(th) * Math.cos(ph) * d + px * 0.55,
+      aimX + Math.sin(th) * Math.cos(ph) * d + px * 0.55,
       cy + Math.sin(ph) * d + bob + py * 0.4,
-      cz + Math.cos(th) * Math.cos(ph) * d + px * 0.2
+      aimZ + Math.cos(th) * Math.cos(ph) * d + px * 0.2
     );
-    this._camLook.set(cx + px * 0.1, cy + py * 0.08, cz);
+    this._camLook.set(aimX + px * 0.1, cy + py * 0.08, aimZ);
 
     if (!this._initialised) {
       this.camera.position.copy(this._camPos);
