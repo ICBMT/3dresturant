@@ -19,7 +19,7 @@ const DAMP = 3.6; // camera damping per second
 */
 const POSES = [
   // hero — front three-quarter, the whole island floating
-  { theta: Math.PI * -0.06, phi: 0.14, dist: 27, look: 0.42, fov: 32 },
+  { theta: Math.PI * -0.06, phi: 0.14, dist: 28.5, look: 0.62, fov: 32 },
   // statement — lift up and around the right corner
   { theta: Math.PI * 0.16, phi: 0.38, dist: 26, look: 0.46, fov: 33 },
   // story — slide round to the kitchen side

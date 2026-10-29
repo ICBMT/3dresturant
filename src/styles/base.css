@@ -114,8 +114,8 @@ sup {
   z-index: 3;
   pointer-events: none;
   background:
-    linear-gradient(180deg, rgba(10, 10, 15, 0.55) 0%, transparent 18%, transparent 76%, rgba(10, 10, 15, 0.75) 100%),
-    radial-gradient(130% 105% at 50% 46%, transparent 42%, rgba(5, 5, 9, 0.62) 100%);
+    linear-gradient(180deg, rgba(10, 10, 15, 0.5) 0%, transparent 16%, transparent 78%, rgba(10, 10, 15, 0.72) 100%),
+    radial-gradient(135% 110% at 50% 46%, transparent 52%, rgba(5, 5, 9, 0.5) 100%);
 }
 
 /* ══════════════ BACKGROUND BLOBS ══════════════ */
@@ -659,6 +659,34 @@ sup {
   .rotate {
     display: grid;
   }
+}
+
+/* ══════════════ TYPE OVER THE DIORAMA ══════════════ */
+/* everything in the content layer sits above the WebGL canvas, so text gets a
+   soft shadow for contrast against the pale island surface */
+.content h1,
+.content h2,
+.content h3,
+.content h4,
+.content p,
+.content li,
+.content a,
+.content figcaption,
+.content em,
+.content span {
+  text-shadow: 0 1px 3px rgba(6, 6, 10, 0.35), 0 2px 26px rgba(6, 6, 10, 0.72);
+}
+.crew__bubble,
+.crew__bubble p,
+.stat em,
+.hero__title,
+.sec-head__title {
+  text-shadow: none;
+}
+.crew__bubble p,
+.stat em,
+.hero__title {
+  text-shadow: 0 2px 30px rgba(6, 6, 10, 0.55);
 }
 
 /* ══════════════ SHARED UTILITIES ══════════════ */
