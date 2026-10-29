@@ -61,16 +61,16 @@ function makeTopTexture() {
   return tex;
 }
 
-/* radial soft shadow sprite texture */
-function makeShadowTexture() {
+/* radial falloff sprite — warm glow beneath the island */
+function makeRadialTexture(inner, mid, outer) {
   const S = 512;
   const cv = document.createElement('canvas');
   cv.width = cv.height = S;
   const ctx = cv.getContext('2d');
-  const g = ctx.createRadialGradient(S / 2, S / 2, S * 0.05, S / 2, S / 2, S * 0.5);
-  g.addColorStop(0, 'rgba(0,0,0,0.55)');
-  g.addColorStop(0.55, 'rgba(0,0,0,0.28)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
+  const g = ctx.createRadialGradient(S / 2, S / 2, S * 0.02, S / 2, S / 2, S * 0.5);
+  g.addColorStop(0, inner);
+  g.addColorStop(0.45, mid);
+  g.addColorStop(1, outer);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, S, S);
   const tex = new THREE.CanvasTexture(cv);
@@ -140,22 +140,22 @@ export function createIsland(R, depth = 0.85) {
   mesh.name = 'island-mesh';
   group.add(mesh);
 
-  // soft floating shadow beneath the island
-  const shTex = makeShadowTexture();
-  const shadow = new THREE.Mesh(
-    new THREE.PlaneGeometry(R * 2.7, R * 2.7),
+  // warm under-glow so the island reads as a floating object
+  const glowTex = makeRadialTexture('rgba(255,196,130,0.9)', 'rgba(255,122,60,0.26)', 'rgba(255,90,40,0)');
+  const glow = new THREE.Mesh(
+    new THREE.PlaneGeometry(R * 3.4, R * 3.4),
     new THREE.MeshBasicMaterial({
-      map: shTex,
+      map: glowTex,
       transparent: true,
-      opacity: 0.5,
+      opacity: 0.34,
       depthWrite: false,
-      color: 0x000000,
+      blending: THREE.AdditiveBlending,
     })
   );
-  shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = -depth - 1.35;
-  shadow.renderOrder = -1;
-  group.add(shadow);
+  glow.rotation.x = -Math.PI / 2;
+  glow.position.y = -depth - 0.9;
+  glow.renderOrder = -1;
+  group.add(glow);
 
   return { group, mesh, R };
 }
