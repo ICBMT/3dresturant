@@ -53,9 +53,12 @@
 .hero::before {
   content: '';
   position: absolute;
-  inset: 0 0 auto 0;
-  height: 64%;
-  background: linear-gradient(180deg, rgba(9, 9, 14, 0.82) 0%, rgba(9, 9, 14, 0.55) 42%, rgba(9, 9, 14, 0) 100%);
+  top: 0;
+  left: 50%;
+  width: min(1180px, 96vw);
+  height: 44%;
+  transform: translateX(-50%);
+  background: radial-gradient(62% 74% at 50% 34%, rgba(8, 8, 13, 0.72) 0%, rgba(8, 8, 13, 0.4) 54%, rgba(8, 8, 13, 0) 82%);
   pointer-events: none;
   z-index: -1;
 }
@@ -190,10 +193,10 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(1100px, 96vw);
-  height: min(900px, 88vh);
+  width: min(880px, 90vw);
+  height: min(560px, 62vh);
   transform: translate(-50%, -50%);
-  background: radial-gradient(56% 50% at 50% 50%, rgba(7, 7, 12, 0.74) 0%, rgba(7, 7, 12, 0.48) 48%, rgba(7, 7, 12, 0) 78%);
+  background: radial-gradient(58% 54% at 50% 50%, rgba(7, 7, 12, 0.6) 0%, rgba(7, 7, 12, 0.34) 52%, rgba(7, 7, 12, 0) 80%);
   pointer-events: none;
   z-index: -1;
 }
@@ -229,16 +232,22 @@
 .visit::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(95deg, rgba(8, 8, 13, 0.8) 0%, rgba(8, 8, 13, 0.5) 34%, rgba(8, 8, 13, 0.12) 56%, transparent 70%);
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 52%;
+  background: linear-gradient(90deg, rgba(8, 8, 13, 0.78) 0%, rgba(8, 8, 13, 0.46) 46%, rgba(8, 8, 13, 0) 96%);
   pointer-events: none;
   z-index: -1;
 }
 .crew::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: linear-gradient(265deg, rgba(8, 8, 13, 0.78) 0%, rgba(8, 8, 13, 0.45) 32%, transparent 62%);
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 46%;
+  background: linear-gradient(270deg, rgba(8, 8, 13, 0.78) 0%, rgba(8, 8, 13, 0.46) 46%, rgba(8, 8, 13, 0) 96%);
   pointer-events: none;
   z-index: -1;
 }
@@ -774,6 +783,15 @@
 
 /* ══════════════ RESPONSIVE ══════════════ */
 @media (max-width: 980px) {
+  .story::before,
+  .visit::before,
+  .crew::before {
+    width: 100%;
+    background: linear-gradient(180deg, rgba(8, 8, 13, 0.7) 0%, rgba(8, 8, 13, 0.38) 58%, rgba(8, 8, 13, 0) 100%);
+  }
+  .crew::before {
+    background: linear-gradient(0deg, rgba(8, 8, 13, 0.7) 0%, rgba(8, 8, 13, 0.38) 58%, rgba(8, 8, 13, 0) 100%);
+  }
   .story__grid,
   .visit__grid {
     grid-template-columns: 1fr;

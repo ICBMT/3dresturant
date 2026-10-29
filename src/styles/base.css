@@ -107,17 +107,6 @@ sup {
   outline: none;
 }
 
-/* soft cinematic scrim that keeps type crisp over the diorama */
-.scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(10, 10, 15, 0.5) 0%, transparent 16%, transparent 78%, rgba(10, 10, 15, 0.72) 100%),
-    radial-gradient(135% 110% at 50% 46%, transparent 52%, rgba(5, 5, 9, 0.5) 100%);
-}
-
 /* ══════════════ BACKGROUND BLOBS ══════════════ */
 .bg {
   position: fixed;
@@ -195,7 +184,9 @@ sup {
 .bg__vignette {
   position: absolute;
   inset: 0;
-  background: radial-gradient(120% 100% at 50% 50%, transparent 52%, rgba(4, 4, 8, 0.55) 100%);
+  background:
+    linear-gradient(180deg, rgba(8, 8, 12, 0.5) 0%, transparent 18%, transparent 80%, rgba(8, 8, 12, 0.6) 100%),
+    radial-gradient(125% 105% at 50% 50%, transparent 58%, rgba(4, 4, 8, 0.42) 100%);
 }
 
 .bg__grain {
