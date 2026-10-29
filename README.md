@@ -52,6 +52,37 @@ doraemon-resturant.glb   the original 27 MB asset — served untouched
 - The host (Doraemon) node is measured in world space after the transform, so
   his close-up pose aims at wherever he actually stands.
 
+## Texture memory (why the model could vanish)
+
+The GLB contains one **8192×8192** JPEG (a backdrop card) plus ~20 smaller maps —
+about **500 MB** of VRAM once decoded and mip-mapped. Handing that to the GPU on
+the first drawn frame stalls the driver and can drop the WebGL context, which
+looks like "the model appears, then the background covers it".
+
+`Experience._budgetTextures()` measures every material map at load time and
+halves the largest ones until the total fits **160 MB** (501 MB → ~130 MB here).
+Only the *GPU upload size* is capped — `doraemon-resturant.glb` on disk is never
+modified and no mesh or UV is touched. The 8K card ends up at 2048², which is
+larger than it can ever appear on screen.
+
+| URL flag | Effect |
+| --- | --- |
+| *(default)* | fit a 160 MB texture budget |
+| `?textures=full` | upload every map at native resolution |
+| `?textures=low` | 80 MB budget, for weak GPUs |
+
+Other GPU-safety measures: the WebGL canvas is never animated with
+`filter` / `transform` / `opacity` (an intro veil above it handles the reveal),
+no `backdrop-filter` is used over the canvas, the frame loop is wrapped in a
+guard, and `webglcontextlost` / `webglcontextrestored` are handled so a dropped
+context recovers instead of leaving a blank canvas.
+
+## Diagnostics
+
+Add `?debug=1` for a live panel: canvas pixel check (blank vs drawn), context
+state and loss count, topmost element at the viewport centre, FPS, draw calls,
+the applied texture budget and which maps were resized.
+
 ## Camera tour
 
 Six keyframes (orbit angle, pitch, distance, look height, fov) live in

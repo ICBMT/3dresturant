@@ -204,12 +204,6 @@ export function initReveals() {
         }
       );
     });
-    // webgl canvas drifts slower than the page
-    gsap.fromTo(
-      '.webgl',
-      { yPercent: 0 },
-      { yPercent: -3, ease: 'none', scrollTrigger: { trigger: document.body, start: 'top top', end: 'bottom bottom', scrub: true } }
-    );
   }
 
   return allChars;

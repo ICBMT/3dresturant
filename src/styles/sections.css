@@ -142,8 +142,7 @@
   right: 0;
   bottom: 0;
   border-top: 1px solid var(--line);
-  background: rgba(10, 10, 15, 0.35);
-  backdrop-filter: blur(6px);
+  background: rgba(9, 9, 14, 0.72);
 }
 
 /* ══════════════ MARQUEE ══════════════ */

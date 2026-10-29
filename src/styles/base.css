@@ -107,6 +107,18 @@ sup {
   outline: none;
 }
 
+/* intro veil — sits above the canvas so the reveal never animates
+   filter/transform/opacity on the WebGL surface itself (which can freeze
+   or blank the canvas on some drivers) */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background: var(--ink);
+  pointer-events: none;
+  opacity: 0;
+}
+
 /* ══════════════ BACKGROUND BLOBS ══════════════ */
 .bg {
   position: fixed;

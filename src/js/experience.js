@@ -11,6 +11,24 @@ import { createIsland } from './island.js';
 const TARGET_SIZE = 12; // longest horizontal edge of the diorama, world units
 const DAMP = 3.6; // camera damping per second
 
+/* ── GPU texture budget ──────────────────────────────────────
+   The source GLB ships one 8192×8192 JPEG (a backdrop card) which costs
+   ~360 MB of VRAM on its own, plus ~20 smaller maps — roughly 500 MB total.
+   Uploading that on the first drawn frame stalls the GPU and can drop the
+   WebGL context, which reads as "the model appears, then goes blank".
+   The .glb file itself is never touched: only the *upload* size of
+   oversized maps is capped so the scene survives. ?textures=full disables
+   the cap, ?textures=low is a quick way to test on weak hardware.       */
+const TEX_MODE = (() => {
+  try {
+    return new URLSearchParams(window.location.search).get('textures') || 'auto';
+  } catch {
+    return 'auto';
+  }
+})();
+const VRAM_BUDGET_MB = TEX_MODE === 'full' ? Infinity : TEX_MODE === 'low' ? 80 : 160;
+const MIN_TEX_SIDE = 256;
+
 /* ── camera keyframes ─────────────────────────
    theta: orbit angle (0 = behind the building, π = the open/front side)
    phi:   pitch above the horizon (rad)
@@ -50,6 +68,9 @@ export class Experience {
     this._camPos = new THREE.Vector3();
     this._camLook = new THREE.Vector3();
     this._initialised = false;
+    this.contextLost = false;
+    this.contextLossCount = 0;
+    this.textureReport = { totalMB: 0, budgetMB: 0, resized: [], maxTextureSize: 0 };
   }
 
   async init() {
@@ -83,6 +104,7 @@ export class Experience {
 
     this._addLights();
     await this._loadModel();
+    this._bindContextEvents();
     this._buildDust();
     this._bindEvents();
 
@@ -117,6 +139,181 @@ export class Experience {
     this.blueGlow = new THREE.PointLight(0x2f9dff, 14, 22, 2);
     this.blueGlow.position.set(4, 1.5, -6);
     this.scene.add(this.blueGlow);
+  }
+
+  /* ── keep the GPU from being handed ~500 MB of textures ──
+     Walks every material, estimates VRAM (RGBA + mip maps), and halves the
+     largest maps until the total fits the budget. Nothing on disk changes. */
+  _budgetTextures(root) {
+    const maxTex = this.renderer.capabilities.maxTextureSize || 4096;
+    const seen = new Map();
+
+    root.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      for (const m of mats) {
+        if (!m) continue;
+        for (const key of Object.keys(m)) {
+          const v = m[key];
+          if (v && v.isTexture && v.image && !seen.has(v.uuid)) {
+            seen.set(v.uuid, { tex: v, mat: m.name || '', prop: key });
+          }
+        }
+      }
+    });
+
+    // one canvas per source image, even when several textures share it
+    const canvasCache = new Map();
+    const originals = new Set();
+
+    const items = [...seen.values()].map(({ tex, mat, prop }) => {
+      const img = tex.image;
+      const w = img.width || 0;
+      const h = img.height || 0;
+      originals.add(img);
+      return { tex, mat, prop, w, h, bytes: this._texBytes(w, h, tex), img };
+    });
+
+    if (!items.length) {
+      this.textureReport = { totalMB: 0, budgetMB: VRAM_BUDGET_MB, resized: [], maxTextureSize: maxTex };
+      return;
+    }
+
+    // never exceed what the hardware can sample
+    for (const it of items) {
+      const longSide = Math.max(it.w, it.h);
+      if (longSide > maxTex) this._downscale(it, maxTex);
+    }
+
+    // then fit the memory budget, biggest map first
+    let guard = 0;
+    while (this._totalBytes(items) / 1e6 > VRAM_BUDGET_MB && guard++ < 48) {
+      const biggest = items
+        .filter((it) => Math.max(it.w, it.h) > MIN_TEX_SIDE)
+        .sort((a, b) => b.bytes - a.bytes)[0];
+      if (!biggest) break;
+      this._downscale(biggest, Math.max(MIN_TEX_SIDE, Math.round(Math.max(biggest.w, biggest.h) / 2)));
+    }
+
+    this._releaseReplacedImages(items);
+
+    this.textureReport = {
+      totalMB: +(this._totalBytes(items) / 1e6).toFixed(1),
+      budgetMB: VRAM_BUDGET_MB,
+      maxTextureSize: maxTex,
+      resized: items
+        .filter((it) => it.resizedFrom)
+        .map((it) => ({
+          from: it.resizedFrom,
+          to: `${it.w}×${it.h}`,
+          mat: it.mat,
+          prop: it.prop,
+        })),
+    };
+  }
+
+  _totalBytes(items) {
+    const live = new Map();
+    for (const it of items) {
+      const prev = live.get(it.tex.uuid);
+      // a texture shared by several slots is only uploaded once
+      live.set(it.tex.uuid, Math.max(prev || 0, it.bytes));
+    }
+    let sum = 0;
+    for (const b of live.values()) sum += b;
+    return sum;
+  }
+
+  _texBytes(w, h, tex) {
+    const mips = tex.generateMipmaps ? 1.34 : 1;
+    return w * h * 4 * mips;
+  }
+
+  /* redraw an image source into a smaller canvas and swap it onto the
+     texture; three re-uploads it on the next frame */
+  _downscale(item, targetLongSide) {
+    const { tex } = item;
+    const longSide = Math.max(item.w, item.h);
+    if (!longSide || targetLongSide >= longSide) return;
+    const scale = targetLongSide / longSide;
+    const nw = Math.max(1, Math.round(item.w * scale));
+    const nh = Math.max(1, Math.round(item.h * scale));
+
+    if (!item.resizedFrom) item.resizedFrom = `${item.w}×${item.h}`;
+
+    // reuse the canvas if the same source image was already scaled to this size
+    const cache = this._canvasCache || (this._canvasCache = new Map());
+    const key = `${targetLongSide}`;
+    let entry = cache.get(item.img);
+    if (!entry || entry.w !== nw || entry.h !== nh) entry = null;
+
+    if (!entry) {
+      const cv = document.createElement('canvas');
+      cv.width = nw;
+      cv.height = nh;
+      const ctx = cv.getContext('2d');
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      try {
+        ctx.drawImage(tex.image, 0, 0, nw, nh);
+      } catch {
+        return; // image not drawable — leave the original in place
+      }
+      entry = { canvas: cv, w: nw, h: nh, key };
+      cache.set(item.img, entry);
+    }
+
+    if (item.img !== entry.canvas) {
+      (this._replacedImages || (this._replacedImages = new Set())).add(item.img);
+    }
+    tex.image = entry.canvas;
+    tex.needsUpdate = true;
+
+    item.w = entry.w;
+    item.h = entry.h;
+    item.bytes = this._texBytes(item.w, item.h, tex);
+  }
+
+  /* free decoded bitmaps we replaced — an 8K JPEG is ~270 MB of RAM */
+  _releaseReplacedImages(items) {
+    const stillUsed = new Set(items.map((it) => it.tex.image));
+    for (const img of this._replacedImages || []) {
+      if (stillUsed.has(img)) continue;
+      if (typeof img.close === 'function') {
+        try {
+          img.close();
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+  }
+
+  /* ── survive a dropped GPU context instead of going blank ── */
+  _bindContextEvents() {
+    this.canvas.addEventListener(
+      'webglcontextlost',
+      (e) => {
+        e.preventDefault(); // allows the context to be restored
+        this.contextLost = true;
+        this.contextLossCount++;
+        console.warn('[diorama] WebGL context lost — waiting for restore');
+      },
+      false
+    );
+
+    this.canvas.addEventListener(
+      'webglcontextrestored',
+      () => {
+        this.contextLost = false;
+        this._initialised = false; // snap the camera back instead of gliding
+        this._lookInit = false;
+        this.resize();
+        console.info('[diorama] WebGL context restored');
+      },
+      false
+    );
   }
 
   _loadModel() {
@@ -200,6 +397,9 @@ export class Experience {
     const island = createIsland(this.radius, Math.max(0.8, this.radius * 0.14));
     this.island = island.group;
     this.scene.add(this.island);
+
+    // cap oversized texture uploads before the first render
+    this._budgetTextures(root);
 
     // world matrices must be fresh before measuring the host
     this.scene.updateMatrixWorld(true);
@@ -376,6 +576,18 @@ export class Experience {
   }
 
   _tick() {
+    if (this.contextLost) return; // nothing to draw until the GPU comes back
+    try {
+      this._frame();
+    } catch (err) {
+      if (!this._frameErrored) {
+        this._frameErrored = true;
+        console.error('[diorama] frame error', err);
+      }
+    }
+  }
+
+  _frame() {
     const dt = Math.min(this.clock.getDelta(), 0.05);
     const time = this.clock.elapsedTime;
 
@@ -469,6 +681,9 @@ export class Experience {
     }
 
     this.renderer.render(this.scene, this.camera);
+
+    // diagnostics hook: pixel reads are only valid straight after a draw
+    if (this.onAfterRender) this.onAfterRender();
   }
 
   dispose() {

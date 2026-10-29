@@ -8,6 +8,7 @@ import './styles/sections.css';
 
 import { initScroll, gsap, ScrollTrigger } from './js/scroll.js';
 import { Experience } from './js/experience.js';
+import { initDebug } from './js/debug.js';
 import {
   initCursor,
   initNav,
@@ -137,13 +138,22 @@ function playIntro(heroChars) {
       0.75
     );
 
-  // the webgl canvas eases in from a slight blur/scale
-  gsap.fromTo(
-    '.webgl',
-    { opacity: 0, scale: 1.08, filter: 'blur(14px)' },
-    { opacity: 1, scale: 1, filter: 'blur(0px)', duration: 1.9, ease: 'power2.out' },
-    0
-  );
+  // the diorama is revealed by fading a plain overlay, never by animating
+  // filter / transform / opacity on the WebGL canvas itself
+  const veil = document.getElementById('veil');
+  if (veil) {
+    gsap.set(veil, { opacity: 0.92 });
+    gsap.to(veil, {
+      opacity: 0,
+      duration: 1.6,
+      ease: 'power2.inOut',
+      onComplete: () => {
+        veil.style.display = 'none';
+      },
+    });
+  }
+  // safety net: make sure no inline filter/transform lingers on the canvas
+  gsap.set('#webgl', { clearProps: 'all' });
   gsap.fromTo(
     '.bg__blob',
     { opacity: 0, scale: 0.7 },
@@ -191,6 +201,7 @@ async function boot() {
   }
 
   loader.set(1);
+  initDebug(experience);
   initSceneSync(experience);
   initMenu();
   ScrollTrigger.refresh();
