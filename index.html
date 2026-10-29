@@ -58,7 +58,7 @@
         DD<sup>®</sup>
       </a>
       <p class="header__meta"><span class="header__meta-dot"></span>tiny restaurant — tokyo</p>
-      <button class="header__menu" id="menu-btn" type="button" data-cursor="open" aria-label="Open menu">
+      <button class="header__menu" id="menu-btn" type="button" data-cursor="open" aria-label="Open menu" aria-expanded="false" aria-controls="nav">
         <span class="header__menu-lines"><i></i><i></i></span>
         <span class="header__menu-word">menu</span>
       </button>
@@ -78,6 +78,7 @@
           <li><a href="#menu" data-scroll-to=".menu" data-nav-link><em>03</em><span data-split>Menu</span></a></li>
           <li><a href="#crew" data-scroll-to=".crew" data-nav-link><em>04</em><span data-split>The Host</span></a></li>
           <li><a href="#visit" data-scroll-to=".visit" data-nav-link><em>05</em><span data-split>Visit</span></a></li>
+          <li><a href="./visit.html" class="nav__ext"><em>06</em><span data-split>Free View</span><i aria-hidden="true">↗</i></a></li>
         </ul>
         <div class="nav__foot">
           <p>reservations<br /><a href="tel:+81321120000">+81 3 2112 0000</a></p>
@@ -284,10 +285,25 @@
             <div class="fig__img"><img src="/images/visit-01.jpg" alt="Neon-lit Japanese diner entrance at night" loading="lazy" /></div>
             <figcaption><span>↳</span> sakuragaoka, after dark</figcaption>
           </figure>
-          <a class="visit__cta magnetic" href="mailto:hello@doraemondiner.jp?subject=Table%20for%20two" data-cursor="book">
-            <span class="visit__cta-in">reserve<br />a table</span>
-            <span class="visit__cta-arrow" aria-hidden="true">↗</span>
-          </a>
+          <div class="visit__actions">
+            <a class="visit__cta magnetic" href="mailto:hello@doraemondiner.jp?subject=Table%20for%20two" data-cursor="book">
+              <span class="visit__cta-in">reserve<br />a table</span>
+              <span class="visit__cta-arrow" aria-hidden="true">↗</span>
+            </a>
+            <a class="visit__view" href="./visit.html" data-cursor="3d">
+              <span class="visit__view-ic" aria-hidden="true">
+                <svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+                  <path d="M24 6 42 16v16L24 42 6 32V16L24 6Z" />
+                  <path d="M6 16l18 10 18-10M24 26v16" />
+                </svg>
+              </span>
+              <span class="visit__view-txt">
+                <em>free view</em>
+                <strong>Explore the diner in 3D</strong>
+              </span>
+              <span class="visit__view-arrow" aria-hidden="true">↗</span>
+            </a>
+          </div>
         </div>
       </section>
     </main>
@@ -309,6 +325,7 @@
           <a href="#menu" data-scroll-to=".menu">menu</a>
           <a href="#crew" data-scroll-to=".crew">the host</a>
           <a href="#visit" data-scroll-to=".visit">visit</a>
+          <a href="./visit.html">free view ↗</a>
         </div>
         <div class="footer__col">
           <h5>social</h5>

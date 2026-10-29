@@ -18,6 +18,12 @@ export default defineConfig({
   },
   build: {
     target: 'es2020',
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        visit: 'visit.html',
+      },
+    },
     assetsInlineLimit: 0, // never inline the 27 MB glb
     chunkSizeWarningLimit: 4096,
   },

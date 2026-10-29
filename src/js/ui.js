@@ -78,56 +78,106 @@ export function initCursor() {
 /* ══════════════ NAV ══════════════ */
 export function initNav(scroller) {
   const nav = document.getElementById('nav');
+  if (!nav) return { openNav() {}, closeNav() {}, isOpen: () => false };
+
   const openBtn = document.getElementById('menu-btn');
   const closeBtn = document.getElementById('nav-close');
-  const bg = nav?.querySelector('.nav__bg');
-  const items = nav ? [...nav.querySelectorAll('.nav__list a')] : [];
+  const bg = nav.querySelector('.nav__bg');
+  const items = [...nav.querySelectorAll('.nav__list a')];
+  const foot = [...nav.querySelectorAll('.nav__foot > *')];
   let open = false;
 
   splitNavLinks();
 
-  const tl = gsap.timeline({ paused: true, defaults: { ease: 'expo.inOut' } });
-  tl.set(nav, { visibility: 'visible' })
-    .to(bg, { scaleY: 1, duration: 0.85 }, 0)
+  const tl = gsap.timeline({
+    paused: true,
+    defaults: { ease: 'expo.inOut' },
+    onReverseComplete: () => {
+      // only drop the interactive state once the curtain is fully gone
+      nav.classList.remove('is-open');
+    },
+  });
+
+  tl.to(bg, { scaleY: 1, duration: 0.85 }, 0)
     .fromTo(
       items,
       { yPercent: 120, opacity: 0 },
       { yPercent: 0, opacity: 1, duration: 0.9, stagger: 0.06, ease: 'expo.out' },
-      0.28
+      0.22
     )
     .fromTo(
-      nav.querySelectorAll('.nav__foot > *'),
+      foot,
       { y: 24, opacity: 0 },
       { y: 0, opacity: 1, duration: 0.7, stagger: 0.06, ease: 'power2.out' },
-      0.42
+      0.38
     )
-    .fromTo(nav.querySelector('.nav__close'), { opacity: 0, rotate: -90 }, { opacity: 1, rotate: 0, duration: 0.6 }, 0.3);
+    .fromTo(
+      nav.querySelector('.nav__close'),
+      { opacity: 0, rotate: -90 },
+      { opacity: 1, rotate: 0, duration: 0.6 },
+      0.26
+    );
 
   const openNav = () => {
     if (open) return;
     open = true;
+    nav.classList.add('is-open'); // ← re-enables pointer-events for the overlay
     nav.setAttribute('aria-hidden', 'false');
+    openBtn?.setAttribute('aria-expanded', 'true');
+    document.body.classList.add('nav-open');
     scroller.stop();
     tl.play();
   };
+
   const closeNav = () => {
     if (!open) return;
     open = false;
     nav.setAttribute('aria-hidden', 'true');
+    openBtn?.setAttribute('aria-expanded', 'false');
+    document.body.classList.remove('nav-open');
     scroller.start();
     tl.reverse();
   };
 
-  openBtn?.addEventListener('click', openNav);
-  closeBtn?.addEventListener('click', closeNav);
-  document.addEventListener('keydown', (e) => e.key === 'Escape' && closeNav());
+  const toggleNav = () => (open ? closeNav() : openNav());
 
-  nav?.querySelectorAll('[data-scroll-to]').forEach((a) => {
+  openBtn?.addEventListener('click', toggleNav);
+  closeBtn?.addEventListener('click', closeNav);
+
+  // clicking the empty area around the links closes it too
+  nav.addEventListener('click', (e) => {
+    if (e.target === nav || e.target === bg || e.target.classList.contains('nav__inner')) {
+      closeNav();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && open) closeNav();
+    // simple focus trap while the overlay is open
+    if (e.key === 'Tab' && open) {
+      const focusables = [...nav.querySelectorAll('a[href], button')].filter(
+        (el) => el.offsetParent !== null
+      );
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+
+  // links that scroll somewhere on this page
+  nav.querySelectorAll('[data-scroll-to]').forEach((a) => {
     a.addEventListener('click', (e) => {
       e.preventDefault();
       const sel = a.dataset.scrollTo;
       closeNav();
-      setTimeout(() => scroller.scrollTo(sel, { duration: 1.8 }), 260);
+      setTimeout(() => scroller.scrollTo(sel, { duration: 1.8 }), 240);
     });
   });
 

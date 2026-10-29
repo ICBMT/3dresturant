@@ -31,6 +31,10 @@ src/js/experience.js     three.js scene, GLB placement, camera rig, dust, lights
 src/js/island.js         the blob island (extruded organic shape + painted canvas texture)
 src/js/ui.js             text splitting, reveals, cursor, nav, pinned horizontal menu,
                          counters, magnetic CTA, scroll→camera pose mapping
+src/js/texbudget.js      shared GPU texture budget (used by both pages)
+src/js/debug.js          ?debug=1 diagnostics panel
+visit.html + src/freeview.js
+                         free-view page: orbit controls, auto spin, reset, fullscreen
 src/styles/base.css      tokens, background blobs/grain, preloader, cursor, header, nav
 src/styles/sections.css  section layouts + responsive rules
 public/images/           generated dish + editorial photography
@@ -76,6 +80,24 @@ Other GPU-safety measures: the WebGL canvas is never animated with
 no `backdrop-filter` is used over the canvas, the frame loop is wrapped in a
 guard, and `webglcontextlost` / `webglcontextrestored` are handled so a dropped
 context recovers instead of leaving a blank canvas.
+
+## Free view — `/visit.html`
+
+A second page that loads the *same* GLB with no scroll story attached: the
+diorama floats on its island and the visitor is in charge.
+
+- **Drag** to orbit, **scroll / pinch** to zoom, **right-drag / two fingers** to pan
+- auto-spin (pauses 6 s after you touch it, then resumes), **reset**, **fullscreen**
+- keyboard: `R` reset, `space` toggle spin, arrows pan, `+` / `-` zoom
+- orbit is clamped so the camera can never dip under the island, and the
+  opening distance is computed from the viewport's **narrower axis**, so the
+  island fits on phones, tablets and ultrawides alike
+- framing re-fits on resize until the visitor moves the camera, then it's theirs
+- shares `texbudget.js` and `island.js` with the scrollytelling scene, so the
+  same 160 MB texture cap and blob island apply
+
+Entry points: the overlay menu (`06 Free View`), the Visit section CTA, and the
+footer. `npm run build` emits both pages (`rollupOptions.input`).
 
 ## Diagnostics
 

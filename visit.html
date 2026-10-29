@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#0a0a0f" />
+    <meta
+      name="description"
+      content="Visit the Doraemon Diner diorama in 3D — rotate, zoom and pan around the restaurant however you like."
+    />
+    <title>Free View — Doraemon Diner</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='46' fill='%2329a8ff'/%3E%3Ccircle cx='50' cy='62' r='24' fill='%23fff'/%3E%3Ccircle cx='50' cy='38' r='7' fill='%23ff3d1f'/%3E%3C/svg%3E" />
+  </head>
+  <body class="fv">
+    <canvas id="stage" class="fv__canvas"></canvas>
+
+    <!-- atmosphere -->
+    <div class="fv__bg" aria-hidden="true">
+      <span class="fv__glow fv__glow--a"></span>
+      <span class="fv__glow fv__glow--b"></span>
+      <span class="fv__vignette"></span>
+      <span class="fv__grain"></span>
+    </div>
+
+    <!-- loader -->
+    <div class="fv__loader" id="fv-loader">
+      <span class="fv__loader-label">opening the diorama</span>
+      <div class="fv__loader-bar"><span id="fv-bar"></span></div>
+      <span class="fv__loader-count" id="fv-count">00</span>
+    </div>
+
+    <!-- top bar -->
+    <header class="fv__top">
+      <a class="fv__back" href="./" data-cursor="←">
+        <span class="fv__back-arrow" aria-hidden="true">←</span>
+        <span>doraemon diner</span>
+      </a>
+      <div class="fv__title">
+        <h1>Free View</h1>
+        <p>rotate · zoom · pan — the whole diorama, yours to move</p>
+      </div>
+      <a class="fv__cta" href="./#visit">book a table</a>
+    </header>
+
+    <!-- controls -->
+    <div class="fv__controls" role="toolbar" aria-label="3D view controls">
+      <button type="button" id="fv-auto" class="fv__btn is-on" aria-pressed="true">
+        <span class="fv__btn-dot" aria-hidden="true"></span>
+        <span>auto spin</span>
+      </button>
+      <button type="button" id="fv-reset" class="fv__btn">
+        <span aria-hidden="true">⟲</span>
+        <span>reset</span>
+      </button>
+      <button type="button" id="fv-full" class="fv__btn">
+        <span aria-hidden="true">⤢</span>
+        <span>fullscreen</span>
+      </button>
+      <a class="fv__btn fv__btn--link" href="./#menu">
+        <span aria-hidden="true">↗</span>
+        <span>see the menu</span>
+      </a>
+    </div>
+
+    <!-- hints -->
+    <div class="fv__hints" aria-hidden="true">
+      <span><em>drag</em> orbit</span>
+      <span><em>scroll</em> zoom</span>
+      <span><em>right-drag / two fingers</em> pan</span>
+    </div>
+
+    <!-- toast for resets / errors -->
+    <p class="fv__toast" id="fv-toast" role="status" aria-live="polite"></p>
+
+    <noscript>
+      <p class="fv__noscript">This view needs JavaScript and WebGL — <a href="./">back to the diner</a>.</p>
+    </noscript>
+
+    <script type="module" src="/src/freeview.js"></script>
+  </body>
+</html>

@@ -501,6 +501,15 @@ sup {
   visibility: visible;
   pointer-events: auto;
 }
+body.nav-open {
+  cursor: auto;
+}
+.nav a:focus-visible,
+.nav button:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
 .nav__bg {
   position: absolute;
   inset: 0;
